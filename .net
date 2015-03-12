@@ -1,0 +1,41 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Collections.Specialized;
+using System.Net;
+namespace ConsoleApplication2
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            using (WebClient client = new WebClient())
+            {
+                
+                byte[] response =
+                client.UploadValues("http://www.acas.rs/acasPublic/imovinaFunkcioneraSearch.htm", new NameValueCollection()
+                   {
+                       { "sEcho", "2" },
+                       { "iColumns", "3" },
+                       { "sColumns", "" },
+                       { "iDisplayStart", "0" },
+                       { "iDisplayLength", "10" },
+                       { "mDataProp_0", "0" },
+                       { "mDataProp_1", "1" },
+                       { "mDataProp_2", "2" },
+                       { "prezime", "" },
+                       { "ime", "" }
+                   });
+
+                string result = System.Text.Encoding.UTF8.GetString(response);
+                dynamic x = Newtonsoft.Json.JsonConvert.DeserializeObject(System.Text.RegularExpressions.Regex.Replace(result, "<.*?>", string.Empty));
+                Console.OutputEncoding = Encoding.UTF8; 
+                Console.WriteLine(x.aaData);
+                Console.ReadLine();
+
+            }
+        }
+    }
+}
