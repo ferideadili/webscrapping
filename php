@@ -21,6 +21,9 @@ curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 $server_output = curl_exec ($ch);
 
 curl_close ($ch);
+
+
+
 $result=json_decode($server_output);
 
 	/* database connection */ 
@@ -36,7 +39,7 @@ mysqli_set_charset($conn, 'utf8');
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 } 
-
+include_once("simple_html_dom.php");
 foreach($result->aaData as $item)
 {
 
@@ -59,26 +62,26 @@ foreach($result->aaData as $item)
 			$sql1 = "INSERT INTO table2(id_funkcionera,datum,url)
 			VALUES ('".$user_id."', '".strip_tags($a)."','".$good."')";
 			$conn->query($sql1);
-			$ch1 = curl_init();
-			curl_setopt($ch1, CURLOPT_URL,"http://www.acas.rs/acasPublic/izvestajDetails.htm?parent=pretragaIzvestaja&izvestajId={$good}");
-			curl_setopt($ch1, CURLOPT_POST, 1);
-
-curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
-
-$server_output1 = curl_exec ($ch1);
-
-curl_close ($ch1);
-//echo $server_output1;
-		}
+			$datum_id= $conn->insert_id;
+			$html= file_get_html(
+			"http://www.acas.rs/acasPublic/izvestajDetails.htm?parent=pretragaIzvestaja&izvestajId={$good}",10);
+			$dom = new DOMDocument();
+			$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
+			$tables = $dom->getElementsByTagName('table'); 
+			$rows = $tables->item(2)->getElementsByTagName('tr'); 
+			 foreach($rows  as $row)
+			 {
+				$cols = $row->getElementsByTagName('td'); 
+				$organ= mysql_real_escape_string($cols->item(1)->nodeValue);
+				$izvor_prihoda= mysql_real_escape_string($cols->item(2)->nodeValue);
+				$intervali= mysql_real_escape_string($cols->item(3)->nodeValue);
+				$neto= mysql_real_escape_string($cols->item(4)->nodeValue);
+				$valuta= mysql_real_escape_string($cols->item(5)->nodeValue);
+				$sql2 = "INSERT INTO table3(user_id,datum_id,organ,izvor_prihoda,intervali,neto,valuta)
+						     VALUES ('".$datum_id."', '".$user_id."','".$organ."','".$izvor_prihoda."','".$intervali."','".$neto."','".$valuta."')";
+				$conn->query($sql2);
+			 }
+		}		
 }
 $conn->close();  
-
-
-/* end of database connection */
-	
-// further processing ....
-echo "<pre>";
-print_r($result->aaData);
-	echo "</pre>";
-
 ?>
